@@ -1,0 +1,14 @@
+# Fichiers de build
+*.exe
+*.o
+*.obj
+*.layout
+*.depend
+
+# Dossiers de build
+pro1/bin/
+pro1/obj/
+test1/obj/
+
+# Autres fichiers temporaires
+*.dat

@@ -12,11 +12,13 @@ struct employe {
     float salaire;
 };
 
+
 void viderBuffer() {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF);
+    while ((c = getchar()) != '\n' && c != EOF); // faut vider le buffer apres chaque scanf raté sinon le prochain scanf prend les restes et ca plante tout
 }
 
+//verif si matricule deja la
 int matriculeExiste(struct employe t[], int n, int matricule) {
     int i;
     for (i = 0; i < n; i++) {
@@ -33,66 +35,62 @@ int ajouterEmploye(struct employe t[], int n) {
     char nom[30], prenom[30];
 
     if (n >= MAX_EMPLOYES) {
-        printf("\nDesole, le tableau est plein. Capacite maximale atteinte.\n");
+        printf("\nTableau plein !\n");
         return n;
     }
 
-    printf("\n--- Ajout d'un employe ---\n");
+    printf("\n--- Nouvel employe ---\n");
 
-    // Saisie du matricule avec validation
-    printf("Matricule : ");
+    printf("Entrez matricule : ");
     if (scanf("%d", &matricule) != 1) {
-        printf("Erreur de saisie. Le matricule doit etre un nombre entier.\n");
+        printf("Erreur saisie\n");
         viderBuffer();
         return n;
     }
 
     if (matricule <= 0) {
-        printf("Le matricule doit etre strictement positif.\n");
+        printf("Matricule invalide\n");
         return n;
     }
 
     if (matriculeExiste(t, n, matricule)) {
-        printf("Ce matricule existe deja dans la base.\n");
+        printf("Ce matricule existe deja\n");
         return n;
     }
 
-    // Saisie du nom
     printf("Nom : ");
     if (scanf("%29s", nom) != 1) {
-        printf("Erreur lors de la saisie du nom.\n");
+        printf("Erreur\n");
         viderBuffer();
         return n;
     }
 
-    // Saisie du prénom
     printf("Prenom : ");
     if (scanf("%29s", prenom) != 1) {
-        printf("Erreur lors de la saisie du prenom.\n");
+        printf("Erreur\n");
         viderBuffer();
         return n;
     }
 
-    // Saisie du salaire avec validation
-    printf("Salaire : ");
+    printf("Salaire (FCFA) : ");
     if (scanf("%f", &salaire) != 1) {
-        printf("Le salaire doit etre un nombre valide.\n");
+        printf("Erreur\n");
         viderBuffer();
         return n;
     }
 
     if (salaire < 0) {
-        printf("Le salaire ne peut pas etre negatif.\n");
+        printf("Salaire negatif ??\n");
         return n;
     }
 
-    // Tout est ok, on enregistre
+    //ok on enregistre
     t[n].matricule = matricule;
     strcpy(t[n].nom, nom);
     strcpy(t[n].prenom, prenom);
     t[n].salaire = salaire;
 
-    printf("\nEmploye ajoute avec success !\n");
+    printf("Ajoute avec succes\n");
     return n + 1;
 }
 
@@ -100,21 +98,21 @@ void afficherTous(struct employe t[], int n) {
     int i;
 
     if (n == 0) {
-        printf("\nLa liste est vide. Aucun employe enregistre.\n");
+        printf("\nAucun employe enregistre\n");
         return;
     }
 
-    printf("\n------ LISTE DES EMPLOYES ------\n");
-    printf("Nombre total : %d\n", n);
+    printf("\n---------- Liste des employes ----------\n");
+    printf("Total : %d\n", n);
 
     for (i = 0; i < n; i++) {
-        printf("\n--- Employe #%d ---\n", i + 1);
-        printf("Matricule : %d\n", t[i].matricule);
-        printf("Nom : %s\n", t[i].nom);
-        printf("Prenom : %s\n", t[i].prenom);
-        printf("Salaire : %.2f FCFA\n", t[i].salaire);
+        printf("\nEmploye %d :\n", i + 1);
+        printf("  Matricule : %d\n", t[i].matricule);
+        printf("  Nom : %s\n", t[i].nom);
+        printf("  Prenom : %s\n", t[i].prenom);
+        printf("  Salaire : %.2f FCFA\n", t[i].salaire);
     }
-    printf("\n__________________________________\n");
+    printf("----------------------------------------\n");
 }
 
 void afficherParSeuil(struct employe t[], int n) {
@@ -123,36 +121,36 @@ void afficherParSeuil(struct employe t[], int n) {
     int i;
 
     if (n == 0) {
-        printf("\nAucun employe dans la base.\n");
+        printf("\nPas d'employes dans la liste\n");
         return;
     }
 
-    printf("\nSalaire seuil : ");
+    printf("\nEntrez le seuil de salaire : ");
     if (scanf("%f", &seuil) != 1) {
-        printf("Valeur invalide.\n");
+        printf("Saisie incorrecte\n");
         viderBuffer();
         return;
     }
 
     if (seuil < 0) {
-        printf("Le seuil ne peut pas etre negatif.\n");
+        printf("Seuil doit etre positif\n");
         return;
     }
 
-    printf("\n--- Employes gagnant plus de %.2f FCFA ---\n", seuil);
+    printf("\n--- Employes avec salaire > %.2f ---\n", seuil);
 
     for (i = 0; i < n; i++) {
         if (t[i].salaire > seuil) {
-            printf("\n%s %s (Matricule: %d) - Salaire: %.2f FCFA\n",
+            printf("\n%s %s (Mat: %d) - %.2f FCFA\n",
                    t[i].prenom, t[i].nom, t[i].matricule, t[i].salaire);
             compteur++;
-        } //**
+        }
     }
 
     if (compteur == 0) {
-        printf("\nAucun employe trouve au-dessus de ce seuil.\n"); // si 'compteur' est resté à 0, cela sgnifie qu'il n'a pas été incrémenté après **
+        printf("\nAucun employe trouve\n");
     } else {
-        printf("\nTotal : %d employe(s) trouve(s).\n", compteur);
+        printf("\nNombre trouve : %d\n", compteur);
     }
 }
 
@@ -161,31 +159,31 @@ int supprimerEmploye(struct employe t[], int n) {
     int i, j;
 
     if (n == 0) {
-        printf("\nLa liste est vide, rien a supprimer.\n");
+        printf("\nListe vide\n");
         return n;
     }
 
     printf("\nMatricule de l'employe a supprimer : ");
     if (scanf("%d", &matricule) != 1) {
-        printf("Matricule invalide.\n");
+        printf("Erreur saisie\n");
         viderBuffer();
         return n;
     }
 
     for (i = 0; i < n; i++) {
         if (t[i].matricule == matricule) {
-            // Décalage des éléments
+            //on decale tout
             for (j = i; j < n - 1; j++) {
-                t[j] = t[j + 1];    // chaque case à la position j prend la valeur de celle qui la suit immédiatement après (j+1)
+                t[j] = t[j + 1];
             }
-            printf("Employe supprime avec succes.\n");
+            printf("Employe supprime\n");
             trouve = 1;
             break;
         }
     }
 
     if (!trouve) {
-        printf("Aucun employe avec ce matricule.\n");
+        printf("Matricule introuvable\n");
         return n;
     }
 
@@ -197,13 +195,13 @@ void trierParSalaire(struct employe t[], int n) {
     int i, j;
 
     if (n == 0) {
-        printf("\nAucun employe a trier.\n");
+        printf("\nAucun employe a trier\n");
         return;
     }
 
-    // Tri à bulles
-    for (i = 0; i < n - 1; i++) { // i nous permet de discriminer les positions correctes afin d'éviter les itérations inutiles
-        for (j = 0; j < n - i - 1; j++) { // j nous permet de parcourir la liste obtenue aprè discrimination
+    //tri a bulles
+    for (i = 0; i < n - 1; i++) {
+        for (j = 0; j < n - i - 1; j++) {
             if (t[j].salaire > t[j + 1].salaire) {
                 temp = t[j];
                 t[j] = t[j + 1];
@@ -212,11 +210,7 @@ void trierParSalaire(struct employe t[], int n) {
         }
     }
 
-    /*
-     INSERER EN COMMNETAIRE UN AUTRE ALGO PLUS RAPIDE POUR EVITER UNE COMPLEXITE DE O(n**2)
-     */
-
-    printf("\nListe triee par salaire croissant.\n");
+    printf("\nListe triee par ordre croissant de salaire\n");
 }
 
 void enregistrerFichier(struct employe t[], int n) {
@@ -224,26 +218,26 @@ void enregistrerFichier(struct employe t[], int n) {
 
     f = fopen(FICHIER_EMPLOYES, "wb");
     if (f == NULL) {
-        printf("\nImpossible d'ouvrir le fichier en ecriture.\n");
-        printf("Verifiez les permissions du repertoire.\n");
+        printf("\nImpossible d'ouvrir le fichier\n");
         return;
     }
 
+    //ecrire le nombre d'employes
     if (fwrite(&n, sizeof(int), 1, f) != 1) {
-        printf("Erreur lors de l'ecriture du nombre d'employes.\n");
+        printf("Erreur ecriture\n");
         fclose(f);
         return;
     }
 
+    //puis les employes
     if (fwrite(t, sizeof(struct employe), n, f) != n) {
-        printf("Erreur lors de l'ecriture des donnees.\n");
+        printf("Erreur ecriture donnees\n");
         fclose(f);
         return;
     }
 
     fclose(f);
-    printf("\nDonnees sauvegardees avec succes dans '%s' (%d employes).\n",
-           FICHIER_EMPLOYES, n);
+    printf("\nDonnees enregistrees avec succes (%d employes)\n", n);
 }
 
 int chargerFichier(struct employe t[]) {
@@ -252,48 +246,49 @@ int chargerFichier(struct employe t[]) {
 
     f = fopen(FICHIER_EMPLOYES, "rb");
     if (f == NULL) {
-        printf("\nFichier '%s' introuvable. Aucune donnee chargee.\n",
-               FICHIER_EMPLOYES);
+        printf("\nFichier introuvable\n");
         return 0;
     }
 
+    //lire le nombre
     if (fread(&n, sizeof(int), 1, f) != 1) {
-        printf("Erreur de lecture du fichier (nombre d'employes).\n");
+        printf("Erreur lecture\n");
         fclose(f);
         return 0;
     }
 
     if (n < 0 || n > MAX_EMPLOYES) {
-        printf("Fichier corrompu : nombre d'employes invalide (%d).\n", n);
+        printf("Fichier corrompu\n");
         fclose(f);
         return 0;
     }
 
+    //lire les employes
     if (fread(t, sizeof(struct employe), n, f) != n) {
-        printf("Erreur de lecture des donnees.\n");
+        printf("Erreur lecture donnees\n");
         fclose(f);
         return 0;
     }
 
     fclose(f);
-    printf("\n%d employe(s) charge(s) depuis '%s'.\n", n, FICHIER_EMPLOYES);
+    printf("\n%d employes charges\n", n);
     return n;
 }
 
 void afficherMenu() {
-    printf("\n____________________________________\n");
-    printf("     GESTION DES EMPLOYES\n");
-    printf("--------------------------------------\n");
-    printf("1. Ajouter un employe\n");
-    printf("2. Afficher tous les employes\n");
-    printf("3. Rechercher par seuil de salaire\n");
-    printf("4. Supprimer un employe\n");
-    printf("5. Trier par salaire\n");
-    printf("6. Sauvegarder dans un fichier\n");
-    printf("7. Charger depuis un fichier\n");
-    printf("8. Quitter\n");
-    printf("_______________________________________\n");
-    printf("Votre choix : ");
+    printf("\n");
+    printf(">> GESTION DES EMPLOYES\n");
+    printf("\n");
+    printf("  >> 1. Ajouter un employe\n");
+    printf("  >> 2. Afficher tous les employes\n");
+    printf("  >> 3. Rechercher par seuil de salaire\n");
+    printf("  >> 4. Supprimer un employe\n");
+    printf("  >> 5. Trier par salaire\n");
+    printf("  >> 6. Sauvegarder dans fichier\n");
+    printf("  >> 7. Charger depuis fichier\n");
+    printf("  >> 8. Quitter\n");
+    printf("\n");
+    printf("Votre choix >> ");
 }
 
 int main() {
@@ -301,13 +296,13 @@ int main() {
     int nb_employes = 0;
     int choix;
 
-    printf("\n*** Programme de gestion des employes ***\n");
+    printf("\nProgramme de gestion des employes\n");
 
     while (1) {
         afficherMenu();
 
         if (scanf("%d", &choix) != 1) {
-            printf("\nEntree invalide. Veuillez saisir un chiffre.\n");
+            printf("\nSaisie invalide\n");
             viderBuffer();
             continue;
         }
@@ -335,11 +330,11 @@ int main() {
                 nb_employes = chargerFichier(tableau);
                 break;
             case 8:
-                printf("\nFermeture du programme...\n");
-                printf("Au revoir !\n\n");
+                printf("\nMerci d'avoir utilise ce programme\n");
+                printf("Au revoir\n");
                 return 0;
             default:
-                printf("\nChoix invalide. Choisissez entre 1 et 8.\n");
+                printf("\nChoix invalide (entrez 1-8)\n");
         }
     }
 

@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
+
 #include <string.h>
 
-#define MAX_EMPLOYES 3
+#define MAX_EMPLOYES 5
 #define FICHIER_EMPLOYES "employes.dat"
 
 struct employe {

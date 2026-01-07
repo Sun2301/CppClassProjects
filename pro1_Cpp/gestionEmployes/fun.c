@@ -65,7 +65,7 @@ int main() {
 
 ---
 
-## 📝 CE QUE TU DOIS OBTENIR COMME SORTIE :
+##  CE QUE TU DOIS OBTENIR COMME SORTIE :
 ```
 [Base] Position: 90° (limites: 0-180°, vitesse: 30°/s)
 

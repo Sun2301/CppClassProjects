@@ -11,4 +11,3 @@ int main()
     p1.affiche();
     return 0;
 }
-

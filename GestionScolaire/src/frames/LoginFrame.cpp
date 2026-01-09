@@ -1,5 +1,8 @@
 #include "frames/LoginFrame.h"
 #include <wx/msgdlg.h>
+#include "frames/AdminFrame.h"
+#include "frames/EnseignantFrame.h"
+#include "frames/EtudiantFrame.h"
 
 // Table des événements
 wxBEGIN_EVENT_TABLE(LoginFrame, wxFrame)
@@ -9,8 +12,8 @@ wxBEGIN_EVENT_TABLE(LoginFrame, wxFrame)
 wxEND_EVENT_TABLE()
 
 LoginFrame::LoginFrame()
-    : wxFrame(nullptr, wxID_ANY, "EPAC - Système de Gestion Scolaire", 
-              wxDefaultPosition, wxSize(500, 400))
+    : wxFrame(nullptr, wxID_ANY, wxT("EPAC - Système de Gestion Scolaire"), 
+              wxDefaultPosition, wxSize(500, 450))
 {
     // Panneau principal
     wxPanel* panel = new wxPanel(this);
@@ -21,7 +24,7 @@ LoginFrame::LoginFrame()
 
     // Titre
     lblTitre = new wxStaticText(panel, wxID_ANY, 
-        "ÉCOLE POLYTECHNIQUE D'ABOMEY-CALAVI\nSystème de Gestion Scolaire",
+        wxT("ÉCOLE POLYTECHNIQUE D'ABOMEY-CALAVI\nSystème de Gestion Scolaire"),
         wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE_HORIZONTAL);
     wxFont fontTitre = lblTitre->GetFont();
     fontTitre.SetPointSize(12);
@@ -35,46 +38,61 @@ LoginFrame::LoginFrame()
     wxBoxSizer* formSizer = new wxBoxSizer(wxVERTICAL);
 
     // Choix du rôle
-    lblRole = new wxStaticText(panel, wxID_ANY, "Vous êtes:");
+    lblRole = new wxStaticText(panel, wxID_ANY, wxT("Vous êtes:"));
     formSizer->Add(lblRole, 0, wxLEFT | wxRIGHT | wxTOP, 10);
     
     wxArrayString roles;
-    roles.Add("Administrateur");
-    roles.Add("Enseignant");
-    roles.Add("Étudiant");
+    roles.Add(wxT("Administrateur"));
+    roles.Add(wxT("Enseignant"));
+    roles.Add(wxT("Étudiant"));
     choixRole = new wxChoice(panel, wxID_ANY, wxDefaultPosition, 
                               wxSize(300, -1), roles);
     choixRole->SetSelection(0);
     formSizer->Add(choixRole, 0, wxALL | wxEXPAND, 10);
 
     // Login
-    lblLogin = new wxStaticText(panel, wxID_ANY, "Identifiant:");
+    lblLogin = new wxStaticText(panel, wxID_ANY, wxT("Identifiant:"));
     formSizer->Add(lblLogin, 0, wxLEFT | wxRIGHT | wxTOP, 10);
     
-    txtLogin = new wxTextCtrl(panel, wxID_ANY, "", 
+    txtLogin = new wxTextCtrl(panel, wxID_ANY, wxT(""), 
                                wxDefaultPosition, wxSize(300, -1));
     formSizer->Add(txtLogin, 0, wxALL | wxEXPAND, 10);
 
     // Mot de passe
-    lblPassword = new wxStaticText(panel, wxID_ANY, "Mot de passe:");
+    lblPassword = new wxStaticText(panel, wxID_ANY, wxT("Mot de passe:"));
     formSizer->Add(lblPassword, 0, wxLEFT | wxRIGHT | wxTOP, 10);
     
-    txtPassword = new wxTextCtrl(panel, wxID_ANY, "", 
+    txtPassword = new wxTextCtrl(panel, wxID_ANY, wxT(""), 
                                   wxDefaultPosition, wxSize(300, -1), 
                                   wxTE_PASSWORD);
     formSizer->Add(txtPassword, 0, wxALL | wxEXPAND, 10);
+
+    // Case à cocher pour afficher/masquer le mot de passe
+    wxCheckBox* chkShowPassword = new wxCheckBox(panel, wxID_ANY, 
+                                                  wxT("Afficher le mot de passe"));
+    formSizer->Add(chkShowPassword, 0, wxLEFT | wxRIGHT, 10);
+    
+    // Lier l'événement pour afficher/masquer le mot de passe
+    chkShowPassword->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent& event) {
+        if (event.IsChecked()) {
+            txtPassword->SetWindowStyle(wxTE_LEFT);
+        } else {
+            txtPassword->SetWindowStyle(wxTE_PASSWORD);
+        }
+        txtPassword->Refresh();
+    });
 
     mainSizer->Add(formSizer, 0, wxALL | wxALIGN_CENTER, 20);
 
     // Boutons
     wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
     
-    btnConnexion = new wxButton(panel, wxID_OK, "Se connecter", 
+    btnConnexion = new wxButton(panel, wxID_OK, wxT("Se connecter"), 
                                  wxDefaultPosition, wxSize(120, 35));
     btnConnexion->SetBackgroundColour(wxColour(0, 102, 204));
     btnConnexion->SetForegroundColour(*wxWHITE);
     
-    btnQuitter = new wxButton(panel, wxID_EXIT, "Quitter", 
+    btnQuitter = new wxButton(panel, wxID_EXIT, wxT("Quitter"), 
                                wxDefaultPosition, wxSize(120, 35));
     
     buttonSizer->Add(btnConnexion, 0, wxALL, 5);
@@ -86,9 +104,7 @@ LoginFrame::LoginFrame()
     
     Centre();
     txtLogin->SetFocus();
-}
-
-void LoginFrame::OnConnexion(wxCommandEvent& event)
+}void LoginFrame::OnConnexion(wxCommandEvent& event)
 {
     wxString login = txtLogin->GetValue();
     wxString password = txtPassword->GetValue();
@@ -97,29 +113,33 @@ void LoginFrame::OnConnexion(wxCommandEvent& event)
     // Validation simple
     if (login.IsEmpty() || password.IsEmpty())
     {
-        wxMessageBox("Veuillez remplir tous les champs", 
-                     "Erreur", wxOK | wxICON_ERROR);
+        wxMessageBox(wxT("Veuillez remplir tous les champs"), 
+                     wxT("Erreur"), wxOK | wxICON_ERROR);
         return;
     }
 
-    // Pour l'instant, connexion factice pour tester
-    wxString roleStr;
+    // Connexion réussie - Ouvrir le tableau de bord approprié
+    wxFrame* dashboard = nullptr;
+    
     switch(role)
     {
-        case 0: roleStr = "Administrateur"; break;
-        case 1: roleStr = "Enseignant"; break;
-        case 2: roleStr = "Étudiant"; break;
+        case 0: // Administrateur
+            dashboard = new AdminFrame(login);
+            break;
+        case 1: // Enseignant
+            dashboard = new EnseignantFrame(login);
+            break;
+        case 2: // Étudiant
+            dashboard = new EtudiantFrame(login, wxT("L3-GE-2024-001"));
+            break;
     }
-
-    wxString message = wxString::Format(
-        "Connexion réussie!\n\nRôle: %s\nIdentifiant: %s", 
-        roleStr, login);
     
-    wxMessageBox(message, "Succès", wxOK | wxICON_INFORMATION);
-    
-    // TODO: Ouvrir la fenêtre appropriée selon le rôle
+    if (dashboard)
+    {
+        dashboard->Show(true);
+        this->Hide();
+    }
 }
-
 void LoginFrame::OnQuitter(wxCommandEvent& event)
 {
     Close(true);
@@ -129,3 +149,4 @@ void LoginFrame::OnRoleChange(wxCommandEvent& event)
 {
     // On peut adapter l'interface selon le rôle si nécessaire
 }
+

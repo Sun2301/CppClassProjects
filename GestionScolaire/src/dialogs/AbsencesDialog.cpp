@@ -1,5 +1,6 @@
 #include "dialogs/AbsencesDialog.h"
-#include "database/Database.h"
+#include "models/Absence.h"
+#include "models/Etudiant.h"
 #include <wx/msgdlg.h>
 
 AbsencesDialog::AbsencesDialog(wxWindow* parent)
@@ -74,32 +75,39 @@ void AbsencesDialog::ChargerEtudiants()
 {
     checklistEtudiants->Clear();
 
-    const auto& students = Database::GetStudents();
+    const auto students = Etudiant::getAll();
     for (const auto& s : students)
     {
-        wxString label = wxString::Format(wxT("%s - %s %s"), s.matricule, s.nom, s.prenom);
+        wxString matricule = wxString::FromUTF8(s.matricule.c_str());
+        wxString nom = wxString::FromUTF8(s.nom.c_str());
+        wxString prenom = wxString::FromUTF8(s.prenom.c_str());
+        wxString label = wxString::Format(wxT("%s - %s %s"), matricule, nom, prenom);
         checklistEtudiants->Append(label);
     }
 }
 
 void AbsencesDialog::OnEnregistrer(wxCommandEvent& event)
 {
-    int checked = 0;
-    const auto& students = Database::GetStudents();
+    const auto students = Etudiant::getAll();
 
     wxString cours = choixCours->GetStringSelection();
     wxDateTime date = datePicker->GetValue();
     wxString dateStr = date.FormatISODate();
 
+    std::vector<size_t> indices;
     for (unsigned int i = 0; i < checklistEtudiants->GetCount(); i++)
     {
         if (checklistEtudiants->IsChecked(i))
         {
-            const auto& s = students[i];
-            Database::AddAbsence(s.matricule, s.nom, s.prenom, cours, dateStr);
-            checked++;
+            indices.push_back(i);
         }
     }
+
+    int checked = Absence::enregistrerAbsences(
+        students,
+        indices,
+        std::string(cours.ToUTF8()),
+        std::string(dateStr.ToUTF8()));
 
     wxString msg = wxString::Format(wxT("Absences enregistrees: %d"), checked);
     wxMessageBox(msg, wxT("Succes"), wxOK | wxICON_INFORMATION);

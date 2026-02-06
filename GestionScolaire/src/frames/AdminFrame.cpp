@@ -2,7 +2,7 @@
 #include <wx/statline.h>
 #include <wx/msgdlg.h>
 #include "dialogs/ValidationNotesDialog.h"
-#include "database/Database.h"
+#include "models/Note.h"
 #include "frames/LoginFrame.h"
 
 wxBEGIN_EVENT_TABLE(AdminFrame, wxFrame)
@@ -140,17 +140,7 @@ void AdminFrame::OnValiderInscriptions(wxCommandEvent& event)
 
 void AdminFrame::OnValiderNotes(wxCommandEvent& event)
 {
-    auto notes = Database::GetAllNotes();
-    bool hasSubmitted = false;
-    for (const auto& n : notes)
-    {
-        if (n.statut == wxT("Soumise"))
-        {
-            hasSubmitted = true;
-            break;
-        }
-    }
-    if (!hasSubmitted)
+    if (Note::getNotesEnAttente().empty())
     {
         wxMessageBox(wxT("Aucune note soumise pour validation."), 
                      wxT("Info"), wxOK | wxICON_INFORMATION);

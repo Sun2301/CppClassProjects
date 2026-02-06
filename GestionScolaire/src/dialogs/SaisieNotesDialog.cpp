@@ -1,5 +1,5 @@
 #include "dialogs/SaisieNotesDialog.h"
-#include "database/Database.h"
+#include "models/Note.h"
 #include <wx/msgdlg.h>
 
 SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
@@ -105,7 +105,7 @@ SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
 void SaisieNotesDialog::ChargerEtudiants()
 {
     wxString cours = choixCours->GetStringSelection();
-    auto notes = Database::GetNotesByCourse(cours);
+    auto notes = Note::getByCourse(std::string(cours.ToUTF8()));
 
     // Données simulées (à remplacer par requête base de données)
     wxString etudiants[][3] = {
@@ -141,9 +141,11 @@ void SaisieNotesDialog::ChargerEtudiants()
         // Charger notes deja sauvegardees si disponibles
         for (const auto& n : notes)
         {
-            if (n.matricule == etudiants[i][0])
+            wxString matricule = wxString::FromUTF8(n.matricule.c_str());
+            if (matricule == etudiants[i][0])
             {
-                if (n.statut == wxT("Validee"))
+                wxString statut = wxString::FromUTF8(n.statut.c_str());
+                if (statut == wxT("Validee"))
                 {
                     gridNotes->SetReadOnly(i, 3);
                     gridNotes->SetReadOnly(i, 4);
@@ -336,25 +338,25 @@ void SaisieNotesDialog::SauvegarderLigne(int row, const wxString& statut)
     if (!hasAny)
         return;
 
-    NoteRecord n;
-    n.matricule = matricule;
-    n.nom = nom;
-    n.prenom = prenom;
-    n.cours = cours;
+    Note n;
+    n.matricule = std::string(matricule.ToUTF8());
+    n.nom = std::string(nom.ToUTF8());
+    n.prenom = std::string(prenom.ToUTF8());
+    n.cours = std::string(cours.ToUTF8());
     n.hasCC = ccStr.ToDouble(&n.cc);
     n.hasTP = tpStr.ToDouble(&n.tp);
     n.hasExamen = exStr.ToDouble(&n.examen);
     n.moyenne = 0.0;
-    n.statut = statut;
-    n.adminComment = wxT("");
-    n.updatedAt = Database::NowStr();
+    n.statut = std::string(statut.ToUTF8());
+    n.adminComment = std::string();
+    n.updatedAt = Note::nowStr();
     if (statut == wxT("Soumise"))
-        n.submittedAt = Database::NowStr();
+        n.submittedAt = Note::nowStr();
 
     if (n.hasCC && n.hasTP && n.hasExamen)
     {
         n.moyenne = (n.cc * 0.30) + (n.tp * 0.20) + (n.examen * 0.50);
     }
 
-    Database::UpsertNote(n);
+    Note::upsert(n);
 }

@@ -4,7 +4,7 @@
 #include <wx/wx.h>
 #include <wx/dataview.h>
 #include <vector>
-#include "database/Database.h"
+#include "models/Note.h"
 
 class ValidationNotesDialog : public wxDialog
 {
@@ -19,7 +19,7 @@ private:
     wxButton* btnRejeter;
     wxButton* btnRafraichir;
     wxButton* btnFermer;
-    std::vector<NoteRecord> m_currentNotes;
+    std::vector<Note> m_currentNotes;
 
     void ChargerCours();
     void ChargerNotes();

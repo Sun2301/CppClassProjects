@@ -1,3 +1,11 @@
+# VS Code Junk
 .vscode/
+*.db
+*.db-shm
+*.db-wal
+
+# Compiled Binaries and Objects
 bin/
-*.db*
+*.o
+*.exe
+*.out

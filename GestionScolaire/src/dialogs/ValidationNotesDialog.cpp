@@ -95,17 +95,10 @@ void ValidationNotesDialog::ChargerCours()
     choixCours->Clear();
 
     wxArrayString cours;
-    auto notes = Database::GetAllNotes();
-    for (const auto& n : notes)
+    auto codes = Note::getCourseCodesWithStatus("Soumise");
+    for (const auto& code : codes)
     {
-        if (n.statut == wxT("Soumise"))
-        {
-            wxString code = n.cours.BeforeFirst(' ');
-            if (code.IsEmpty())
-                code = n.cours;
-            if (cours.Index(code) == wxNOT_FOUND)
-                cours.Add(code);
-        }
+        cours.Add(wxString::FromUTF8(code.c_str()));
     }
 
     if (cours.IsEmpty())
@@ -133,41 +126,31 @@ void ValidationNotesDialog::ChargerNotes()
 
     wxString selectedCourse = choixCours->GetStringSelection();
     wxString selectedStatus = choixStatut->GetStringSelection();
-    auto merged = Database::GetAllNotes();
+    auto merged = Note::getByStatusAndCourseCode(
+        std::string(selectedStatus.ToUTF8()),
+        std::string(selectedCourse.ToUTF8()));
 
     long index = 0;
     for (const auto& n : merged)
     {
-        if (n.statut != selectedStatus)
-            continue;
-        if (!selectedCourse.IsEmpty())
-        {
-            wxString code = n.cours.BeforeFirst(' ');
-            if (code.IsEmpty())
-                code = n.cours;
-            if (code != selectedCourse)
-                continue;
-        }
-
-        // Extract course code (first token)
-        wxString courseCode = n.cours.BeforeFirst(' ');
-        if (courseCode.IsEmpty())
-            courseCode = n.cours;
-
+        wxString courseCode = wxString::FromUTF8(Note::courseCode(n.cours).c_str());
         wxString cc = n.hasCC ? wxString::Format(wxT("%.2f"), n.cc) : wxT("-");
         wxString tp = n.hasTP ? wxString::Format(wxT("%.2f"), n.tp) : wxT("-");
         wxString ex = n.hasExamen ? wxString::Format(wxT("%.2f"), n.examen) : wxT("-");
-        wxString fullname = wxString::Format(wxT("%s %s"), n.nom, n.prenom);
+        wxString fullname = wxString::FromUTF8(n.nom.c_str()) + wxT(" ") + wxString::FromUTF8(n.prenom.c_str());
+        wxString matricule = wxString::FromUTF8(n.matricule.c_str());
+        wxString statut = wxString::FromUTF8(n.statut.c_str());
+        wxString submittedAt = wxString::FromUTF8(n.submittedAt.c_str());
 
         wxVariant sel(false);
         wxVariant varCourse(courseCode);
-        wxVariant varMat(n.matricule);
+        wxVariant varMat(matricule);
         wxVariant varName(fullname);
         wxVariant varCC(cc);
         wxVariant varTP(tp);
         wxVariant varEX(ex);
-        wxVariant varStat(n.statut);
-        wxVariant varSub(n.submittedAt.IsEmpty() ? wxT("-") : n.submittedAt);
+        wxVariant varStat(statut);
+        wxVariant varSub(submittedAt.IsEmpty() ? wxT("-") : submittedAt);
 
         wxVector<wxVariant> row;
         row.push_back(sel);
@@ -212,7 +195,7 @@ void ValidationNotesDialog::OnValider(wxCommandEvent& event)
             if (r < m_currentNotes.size())
             {
                 const auto& n = m_currentNotes[r];
-                Database::UpdateNoteValidation(n.matricule, n.cours, wxT("Validee"), wxT(""));
+                Note::updateValidation(n.matricule, n.cours, "Validee", "");
                 count++;
             }
         }
@@ -251,7 +234,7 @@ void ValidationNotesDialog::OnRejeter(wxCommandEvent& event)
                 if (r < m_currentNotes.size())
                 {
                     const auto& n = m_currentNotes[r];
-                    Database::UpdateNoteValidation(n.matricule, n.cours, wxT("Rejetee"), reason);
+                    Note::updateValidation(n.matricule, n.cours, "Rejetee", std::string(reason.ToUTF8()));
                     count++;
                 }
             }

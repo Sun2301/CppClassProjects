@@ -1,5 +1,5 @@
 #include "dialogs/ConsultationAbsencesDialog.h"
-#include "database/Database.h"
+#include "models/Absence.h"
 #include <wx/msgdlg.h>
 #include <wx/textdlg.h>
 
@@ -56,14 +56,19 @@ void ConsultationAbsencesDialog::ChargerAbsences()
 {
     listAbsences->DeleteAllItems();
 
-    auto absences = Database::GetAbsencesByMatricule(m_matricule);
+    auto absences = Absence::getByMatricule(std::string(m_matricule.ToUTF8()));
     long index = 0;
     for (const auto& a : absences)
     {
-        long item = listAbsences->InsertItem(index, a.date);
-        listAbsences->SetItem(item, 1, a.cours);
-        listAbsences->SetItem(item, 2, a.statut);
-        listAbsences->SetItem(item, 3, a.justification.IsEmpty() ? wxT("-") : a.justification);
+        wxString date = wxString::FromUTF8(a.date.c_str());
+        wxString cours = wxString::FromUTF8(a.cours.c_str());
+        wxString statut = wxString::FromUTF8(a.statut.c_str());
+        wxString justification = wxString::FromUTF8(a.justification.c_str());
+
+        long item = listAbsences->InsertItem(index, date);
+        listAbsences->SetItem(item, 1, cours);
+        listAbsences->SetItem(item, 2, statut);
+        listAbsences->SetItem(item, 3, justification.IsEmpty() ? wxT("-") : justification);
         listAbsences->SetItemData(item, static_cast<long>(a.id));
         index++;
     }
@@ -90,7 +95,7 @@ void ConsultationAbsencesDialog::OnJustifier(wxCommandEvent& event)
             return;
         }
 
-        if (Database::JustifyAbsence(static_cast<int>(id), justification))
+        if (Absence::justifier(static_cast<int>(id), std::string(justification.ToUTF8())))
         {
             wxMessageBox(wxT("Justification envoyee."), wxT("Succes"), wxOK | wxICON_INFORMATION);
             ChargerAbsences();

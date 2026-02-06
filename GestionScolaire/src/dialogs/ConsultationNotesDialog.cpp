@@ -1,5 +1,5 @@
 #include "dialogs/ConsultationNotesDialog.h"
-#include "database/Database.h"
+#include "models/Note.h"
 #include <wx/msgdlg.h>
 
 ConsultationNotesDialog::ConsultationNotesDialog(wxWindow* parent, const wxString& matricule)
@@ -54,19 +54,25 @@ void ConsultationNotesDialog::ChargerNotes()
 {
     listNotes->DeleteAllItems();
 
-    auto notes = Database::GetNotesByMatricule(m_matricule);
+    auto notes = Note::getByMatricule(std::string(m_matricule.ToUTF8()));
     long index = 0;
     for (const auto& n : notes)
     {
-        long item = listNotes->InsertItem(index, n.cours);
+        wxString cours = wxString::FromUTF8(n.cours.c_str());
+        wxString statut = wxString::FromUTF8(n.statut.c_str());
+        wxString updatedAt = wxString::FromUTF8(n.updatedAt.c_str());
+        wxString validationAt = wxString::FromUTF8(n.validationAt.c_str());
+        wxString adminComment = wxString::FromUTF8(n.adminComment.c_str());
+
+        long item = listNotes->InsertItem(index, cours);
         listNotes->SetItem(item, 1, n.hasCC ? wxString::Format(wxT("%.2f"), n.cc) : wxT("-"));
         listNotes->SetItem(item, 2, n.hasTP ? wxString::Format(wxT("%.2f"), n.tp) : wxT("-"));
         listNotes->SetItem(item, 3, n.hasExamen ? wxString::Format(wxT("%.2f"), n.examen) : wxT("-"));
         listNotes->SetItem(item, 4, (n.hasCC && n.hasTP && n.hasExamen) ? wxString::Format(wxT("%.2f"), n.moyenne) : wxT("-"));
-        listNotes->SetItem(item, 5, n.statut);
-        listNotes->SetItem(item, 6, n.updatedAt.IsEmpty() ? wxT("-") : n.updatedAt);
-        listNotes->SetItem(item, 7, n.validationAt.IsEmpty() ? wxT("-") : n.validationAt);
-        listNotes->SetItem(item, 8, n.adminComment.IsEmpty() ? wxT("-") : n.adminComment);
+        listNotes->SetItem(item, 5, statut);
+        listNotes->SetItem(item, 6, updatedAt.IsEmpty() ? wxT("-") : updatedAt);
+        listNotes->SetItem(item, 7, validationAt.IsEmpty() ? wxT("-") : validationAt);
+        listNotes->SetItem(item, 8, adminComment.IsEmpty() ? wxT("-") : adminComment);
         index++;
     }
 

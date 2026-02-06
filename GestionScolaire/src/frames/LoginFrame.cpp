@@ -3,7 +3,8 @@
 #include "frames/AdminFrame.h"
 #include "frames/EnseignantFrame.h"
 #include "frames/EtudiantFrame.h"
-#include "database/Database.h"
+#include "models/Utilisateur.h"
+#include <memory>
 
 // Table des événements
 wxBEGIN_EVENT_TABLE(LoginFrame, wxFrame)
@@ -119,6 +120,15 @@ LoginFrame::LoginFrame()
         return;
     }
 
+    std::string loginStd = std::string(login.ToUTF8());
+    std::string passwordStd = std::string(password.ToUTF8());
+    std::unique_ptr<Utilisateur> user(Utilisateur::authentifier(loginStd, passwordStd));
+    if (!user)
+    {
+        wxMessageBox(wxT("Connexion invalide."), wxT("Erreur"), wxOK | wxICON_ERROR);
+        return;
+    }
+
     // Connexion réussie - Ouvrir le tableau de bord approprié
     wxFrame* dashboard = nullptr;
     
@@ -132,16 +142,15 @@ LoginFrame::LoginFrame()
             break;
         case 2: // Étudiant
         {
-            // On utilise l'identifiant comme matricule pour consulter ses propres notes
-            StudentRecord student;
-            if (!Database::GetStudentByMatricule(login, student))
+            if (user->getRole() != Utilisateur::Role::Etudiant)
             {
-                wxMessageBox(wxT("Matricule invalide. Veuillez verifier votre identifiant."), 
+                wxMessageBox(wxT("Matricule invalide. Veuillez verifier votre identifiant."),
                              wxT("Erreur"), wxOK | wxICON_ERROR);
                 return;
             }
-            wxString nomComplet = student.nom + wxT(" ") + student.prenom;
-            dashboard = new EtudiantFrame(nomComplet, student.matricule);
+            wxString nomComplet = wxString::FromUTF8(user->getNomComplet().c_str());
+            wxString matricule = wxString::FromUTF8(user->getMatricule().c_str());
+            dashboard = new EtudiantFrame(nomComplet, matricule);
             break;
         }
     }

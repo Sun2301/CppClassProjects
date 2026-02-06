@@ -3,6 +3,7 @@
 #include "frames/AdminFrame.h"
 #include "frames/EnseignantFrame.h"
 #include "frames/EtudiantFrame.h"
+#include "database/Database.h"
 
 // Table des événements
 wxBEGIN_EVENT_TABLE(LoginFrame, wxFrame)
@@ -130,8 +131,19 @@ LoginFrame::LoginFrame()
             dashboard = new EnseignantFrame(login);
             break;
         case 2: // Étudiant
-            dashboard = new EtudiantFrame(login, wxT("L3-GE-2024-001"));
+        {
+            // On utilise l'identifiant comme matricule pour consulter ses propres notes
+            StudentRecord student;
+            if (!Database::GetStudentByMatricule(login, student))
+            {
+                wxMessageBox(wxT("Matricule invalide. Veuillez verifier votre identifiant."), 
+                             wxT("Erreur"), wxOK | wxICON_ERROR);
+                return;
+            }
+            wxString nomComplet = student.nom + wxT(" ") + student.prenom;
+            dashboard = new EtudiantFrame(nomComplet, student.matricule);
             break;
+        }
     }
     
     if (dashboard)
@@ -142,11 +154,20 @@ LoginFrame::LoginFrame()
 }
 void LoginFrame::OnQuitter(wxCommandEvent& event)
 {
-    Close(true);
+    if (wxMessageBox(wxT("Voulez-vous vraiment quitter l'application?"),
+                     wxT("Confirmation"),
+                     wxYES_NO | wxICON_QUESTION) == wxYES)
+    {
+        Close(true);
+        if (wxTheApp)
+        {
+            wxTheApp->ExitMainLoop();
+            wxTheApp->Exit();
+        }
+    }
 }
 
 void LoginFrame::OnRoleChange(wxCommandEvent& event)
 {
     // On peut adapter l'interface selon le rôle si nécessaire
 }
-

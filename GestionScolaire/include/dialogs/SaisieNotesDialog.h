@@ -15,7 +15,7 @@ private:
     wxGrid* gridNotes;
     wxButton* btnSauvegarder;      // Nouveau: Sauvegarder brouillon
     wxButton* btnEnregistrer;      // Enregistrer et soumettre
-    wxButton* btnAnnuler;
+    wxButton* btnQuitter;
     wxStaticText* lblInfo;
     wxStaticText* lblStatut;       // Nouveau: Afficher le statut
 
@@ -25,9 +25,10 @@ private:
     // Gestionnaires d'événements
     void OnCoursChange(wxCommandEvent& event);
     void OnEnregistrer(wxCommandEvent& event);
-    void OnAnnuler(wxCommandEvent& event);
+    void OnQuitter(wxCommandEvent& event);
     void OnCellChange(wxGridEvent& event);
     void OnSauvegarder(wxCommandEvent& event);
+    void SauvegarderLigne(int row, const wxString& statut);
     
     // Méthodes utilitaires
     void ChargerEtudiants();

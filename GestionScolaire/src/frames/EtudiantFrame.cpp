@@ -1,6 +1,9 @@
 #include "frames/EtudiantFrame.h"
 #include <wx/msgdlg.h>
 #include <wx/statline.h>
+#include "dialogs/ConsultationAbsencesDialog.h"
+#include "dialogs/ConsultationNotesDialog.h"
+#include "frames/LoginFrame.h"
 
 EtudiantFrame::EtudiantFrame(const wxString& nomEtudiant, const wxString& matricule)
     : wxFrame(nullptr, wxID_ANY, wxT("EPAC - Tableau de bord Étudiant"),
@@ -119,8 +122,8 @@ EtudiantFrame::EtudiantFrame(const wxString& nomEtudiant, const wxString& matric
 
 void EtudiantFrame::OnConsulterNotes(wxCommandEvent& event)
 {
-    wxMessageBox(wxT("Consultation de mes notes en temps réel\n(À implémenter)"), 
-                 wxT("Info"), wxOK | wxICON_INFORMATION);
+    ConsultationNotesDialog dialog(this, m_matricule);
+    dialog.ShowModal();
 }
 
 void EtudiantFrame::OnTelechargerBulletin(wxCommandEvent& event)
@@ -131,14 +134,14 @@ void EtudiantFrame::OnTelechargerBulletin(wxCommandEvent& event)
 
 void EtudiantFrame::OnConsulterAbsences(wxCommandEvent& event)
 {
-    wxMessageBox(wxT("Consultation de mes absences\n(À implémenter)"), 
-                 wxT("Info"), wxOK | wxICON_INFORMATION);
+    ConsultationAbsencesDialog dialog(this, m_matricule);
+    dialog.ShowModal();
 }
 
 void EtudiantFrame::OnJustifierAbsence(wxCommandEvent& event)
 {
-    wxMessageBox(wxT("Justification d'absence\n(À implémenter)"), 
-                 wxT("Info"), wxOK | wxICON_INFORMATION);
+    ConsultationAbsencesDialog dialog(this, m_matricule);
+    dialog.ShowModal();
 }
 
 void EtudiantFrame::OnEmploiTemps(wxCommandEvent& event)
@@ -165,7 +168,8 @@ void EtudiantFrame::OnDeconnexion(wxCommandEvent& event)
                      wxT("Confirmation"), 
                      wxYES_NO | wxICON_QUESTION) == wxYES)
     {
-        Close(true);
-        // TODO: Retourner à l'écran de connexion
+        LoginFrame* login = new LoginFrame();
+        login->Show(true);
+        Destroy();
     }
 }

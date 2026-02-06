@@ -2,6 +2,8 @@
 #include <wx/msgdlg.h>
 #include <wx/statline.h>
 #include "dialogs/SaisieNotesDialog.h"
+#include "dialogs/AbsencesDialog.h"
+#include "frames/LoginFrame.h"
 
 EnseignantFrame::EnseignantFrame(const wxString& nomEnseignant)
     : wxFrame(nullptr, wxID_ANY, wxT("EPAC - Tableau de bord Enseignant"),
@@ -127,8 +129,8 @@ void EnseignantFrame::OnConsulterNotes(wxCommandEvent& event)
 
 void EnseignantFrame::OnEnregistrerAbsences(wxCommandEvent& event)
 {
-    wxMessageBox(wxT("Module Enregistrement des Absences\n(À implémenter)"), 
-                 wxT("Info"), wxOK | wxICON_INFORMATION);
+    AbsencesDialog dialog(this);
+    dialog.ShowModal();
 }
 
 void EnseignantFrame::OnConsulterAbsences(wxCommandEvent& event)
@@ -155,7 +157,8 @@ void EnseignantFrame::OnDeconnexion(wxCommandEvent& event)
                      wxT("Confirmation"), 
                      wxYES_NO | wxICON_QUESTION) == wxYES)
     {
-        Close(true);
-        // TODO: Retourner à l'écran de connexion
+        LoginFrame* login = new LoginFrame();
+        login->Show(true);
+        Destroy();
     }
 }

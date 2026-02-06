@@ -1,4 +1,5 @@
 #include "dialogs/SaisieNotesDialog.h"
+#include "database/Database.h"
 #include <wx/msgdlg.h>
 
 SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
@@ -38,7 +39,7 @@ SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
     lblInfo->SetForegroundColour(wxColour(100, 100, 100));
     mainSizer->Add(lblInfo, 0, wxALL | wxALIGN_CENTER, 5);
 
-    lblStatut = new wxStaticText(panel, wxID_ANY, wxT("Statut: Brouillon (non soumis)"));
+    lblStatut = new wxStaticText(panel, wxID_ANY, wxT("Statut: Disponible (temps reel)"));
     wxFont fontStatut = lblStatut->GetFont();
     fontStatut.SetWeight(wxFONTWEIGHT_BOLD);
     lblStatut->SetFont(fontStatut);
@@ -88,12 +89,12 @@ SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
     btnEnregistrer->SetForegroundColour(*wxWHITE);
     btnEnregistrer->Bind(wxEVT_BUTTON, &SaisieNotesDialog::OnEnregistrer, this);
     
-    btnAnnuler = new wxButton(panel, wxID_CANCEL, wxT("Annuler"), wxDefaultPosition, wxSize(120, 35));
-    btnAnnuler->Bind(wxEVT_BUTTON, &SaisieNotesDialog::OnAnnuler, this);
+    btnQuitter = new wxButton(panel, wxID_CANCEL, wxT("Quitter"), wxDefaultPosition, wxSize(120, 35));
+    btnQuitter->Bind(wxEVT_BUTTON, &SaisieNotesDialog::OnQuitter, this);
     
     buttonSizer->Add(btnSauvegarder, 0, wxALL, 5);
     buttonSizer->Add(btnEnregistrer, 0, wxALL, 5);
-    buttonSizer->Add(btnAnnuler, 0, wxALL, 5);
+    buttonSizer->Add(btnQuitter, 0, wxALL, 5);
 
     // On ajoute le sizer des boutons en bas à droite
     mainSizer->Add(buttonSizer, 0, wxALIGN_RIGHT | wxALL, 10);
@@ -103,6 +104,9 @@ SaisieNotesDialog::SaisieNotesDialog(wxWindow* parent)
 
 void SaisieNotesDialog::ChargerEtudiants()
 {
+    wxString cours = choixCours->GetStringSelection();
+    auto notes = Database::GetNotesByCourse(cours);
+
     // Données simulées (à remplacer par requête base de données)
     wxString etudiants[][3] = {
         {wxT("L3-GE-2024-001"), wxT("KOSSOU"), wxT("Jean")},
@@ -119,6 +123,11 @@ void SaisieNotesDialog::ChargerEtudiants()
     
     for (int i = 0; i < 10; i++)
     {
+        gridNotes->SetCellValue(i, 3, wxT(""));
+        gridNotes->SetCellValue(i, 4, wxT(""));
+        gridNotes->SetCellValue(i, 5, wxT(""));
+        gridNotes->SetCellValue(i, 6, wxT(""));
+
         gridNotes->SetCellValue(i, 0, etudiants[i][0]); // Matricule
         gridNotes->SetCellValue(i, 1, etudiants[i][1]); // Nom
         gridNotes->SetCellValue(i, 2, etudiants[i][2]); // Prénom
@@ -128,6 +137,31 @@ void SaisieNotesDialog::ChargerEtudiants()
         gridNotes->SetCellBackgroundColour(i, 1, wxColour(240, 240, 240));
         gridNotes->SetCellBackgroundColour(i, 2, wxColour(240, 240, 240));
         gridNotes->SetCellBackgroundColour(i, 6, wxColour(240, 240, 240));
+
+        // Charger notes deja sauvegardees si disponibles
+        for (const auto& n : notes)
+        {
+            if (n.matricule == etudiants[i][0])
+            {
+                if (n.statut == wxT("Validee"))
+                {
+                    gridNotes->SetReadOnly(i, 3);
+                    gridNotes->SetReadOnly(i, 4);
+                    gridNotes->SetReadOnly(i, 5);
+                    gridNotes->SetCellBackgroundColour(i, 3, wxColour(230, 230, 230));
+                    gridNotes->SetCellBackgroundColour(i, 4, wxColour(230, 230, 230));
+                    gridNotes->SetCellBackgroundColour(i, 5, wxColour(230, 230, 230));
+                }
+                if (n.hasCC) gridNotes->SetCellValue(i, 3, wxString::Format(wxT("%.2f"), n.cc));
+                if (n.hasTP) gridNotes->SetCellValue(i, 4, wxString::Format(wxT("%.2f"), n.tp));
+                if (n.hasExamen) gridNotes->SetCellValue(i, 5, wxString::Format(wxT("%.2f"), n.examen));
+                if (n.hasCC && n.hasTP && n.hasExamen)
+                {
+                    CalculerMoyenne(i);
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -159,6 +193,9 @@ void SaisieNotesDialog::OnCellChange(wxGridEvent& event)
         
         // Recalculer la moyenne
         CalculerMoyenne(row);
+
+        // Sauvegarde automatique (notes visibles en temps reel)
+        SauvegarderLigne(row, wxT("Disponible"));
     }
 }
 
@@ -220,77 +257,104 @@ void SaisieNotesDialog::OnSauvegarder(wxCommandEvent& event)
         if (!gridNotes->GetCellValue(i, 4).IsEmpty()) notesTP++;
         if (!gridNotes->GetCellValue(i, 5).IsEmpty()) notesExamen++;
     }
+
+    for (int i = 0; i < gridNotes->GetNumberRows(); i++)
+    {
+        wxString ccStr = gridNotes->GetCellValue(i, 3);
+        wxString tpStr = gridNotes->GetCellValue(i, 4);
+        wxString exStr = gridNotes->GetCellValue(i, 5);
+
+        bool hasAny = !ccStr.IsEmpty() || !tpStr.IsEmpty() || !exStr.IsEmpty();
+        if (!hasAny)
+            continue;
+
+        SauvegarderLigne(i, wxT("Disponible"));
+    }
     
     wxString msg = wxString::Format(
-        wxT("Sauvegarde en cours...\n\nNotes saisies:\n- CC: %d/%d étudiants\n- TP: %d/%d étudiants\n- Examen: %d/%d étudiants\n\nLes notes sont sauvegardées en brouillon.\nVous pouvez les modifier à tout moment."),
+        wxT("Sauvegarde en cours...\n\nNotes saisies:\n- CC: %d/%d étudiants\n- TP: %d/%d étudiants\n- Examen: %d/%d étudiants\n\nLes notes sont disponibles en temps reel pour les etudiants.\nVous pouvez les modifier à tout moment."),
         notesCC, gridNotes->GetNumberRows(),
         notesTP, gridNotes->GetNumberRows(),
         notesExamen, gridNotes->GetNumberRows());
     
-    // TODO: Sauvegarder dans la base de données avec statut "Brouillon"
-    
-    wxMessageBox(msg, wxT("Brouillon sauvegardé"), wxOK | wxICON_INFORMATION);
+    wxMessageBox(msg, wxT("Sauvegarde terminee"), wxOK | wxICON_INFORMATION);
     
     // Ne pas fermer la fenêtre, permettre de continuer la saisie
 }
 
 void SaisieNotesDialog::OnEnregistrer(wxCommandEvent& event)
 {
-    // Vérifier que toutes les notes sont complètes
-    int notesIncompletes = 0;
+    // Soumission possible uniquement si toutes les notes sont completes
     for (int i = 0; i < gridNotes->GetNumberRows(); i++)
     {
         if (gridNotes->GetCellValue(i, 3).IsEmpty() ||
             gridNotes->GetCellValue(i, 4).IsEmpty() ||
             gridNotes->GetCellValue(i, 5).IsEmpty())
         {
-            notesIncompletes++;
-        }
-    }
-    
-    if (notesIncompletes > 0)
-    {
-        wxString msg = wxString::Format(
-            wxT("ATTENTION: %d étudiant(s) ont des notes incomplètes!\n\nLes notes incomplètes ne seront PAS visibles par les étudiants.\n\nOptions:\n- Cliquez NON pour revenir à la saisie\n- Cliquez OUI pour soumettre quand même (seulement les notes complètes seront visibles)\n- Utilisez 'Sauvegarder Brouillon' pour sauvegarder sans soumettre"),
-            notesIncompletes);
-        
-        if (wxMessageBox(msg, wxT("Notes incomplètes"), 
-                        wxYES_NO | wxICON_WARNING) != wxYES)
-        {
+            wxMessageBox(
+                wxT("Soumission impossible: toutes les notes doivent etre completes pour tous les etudiants."),
+                wxT("Notes incompletes"),
+                wxOK | wxICON_WARNING);
             return;
         }
     }
+
+    // Enregistrer en base (soumis)
+    wxString cours = choixCours->GetStringSelection();
+    for (int i = 0; i < gridNotes->GetNumberRows(); i++)
+    {
+        SauvegarderLigne(i, wxT("Soumise"));
+    }
     
-    // TODO: Enregistrer dans la base de données avec statut "Soumis"
-    
-    wxMessageBox(wxT("Notes soumises avec succès!\n\n✓ Les notes complètes sont maintenant visibles par les étudiants en temps réel.\n✓ Vous pouvez toujours les modifier avant validation par l'administrateur."), 
-                 wxT("Succès"), wxOK | wxICON_INFORMATION);
+    wxMessageBox(wxT("Notes soumises avec succes!\nUne notification a ete envoyee a l'administration pour validation."), 
+                 wxT("Succes"), wxOK | wxICON_INFORMATION);
     
     EndModal(wxID_OK);
 }
-void SaisieNotesDialog::OnAnnuler(wxCommandEvent& event)
+void SaisieNotesDialog::OnQuitter(wxCommandEvent& event)
 {
-    // Vérifier s'il y a des modifications non sauvegardées
-    bool hasData = false;
-    for (int i = 0; i < gridNotes->GetNumberRows() && !hasData; i++)
+    if (wxMessageBox(wxT("Voulez-vous vraiment quitter la saisie des notes?"),
+                     wxT("Confirmation"),
+                     wxYES_NO | wxICON_QUESTION) == wxYES)
     {
-        if (!gridNotes->GetCellValue(i, 3).IsEmpty() ||
-            !gridNotes->GetCellValue(i, 4).IsEmpty() ||
-            !gridNotes->GetCellValue(i, 5).IsEmpty())
-        {
-            hasData = true;
-        }
+        EndModal(wxID_CANCEL);
     }
-    
-    if (hasData)
+}
+
+void SaisieNotesDialog::SauvegarderLigne(int row, const wxString& statut)
+{
+    wxString cours = choixCours->GetStringSelection();
+    wxString matricule = gridNotes->GetCellValue(row, 0);
+    wxString nom = gridNotes->GetCellValue(row, 1);
+    wxString prenom = gridNotes->GetCellValue(row, 2);
+
+    wxString ccStr = gridNotes->GetCellValue(row, 3);
+    wxString tpStr = gridNotes->GetCellValue(row, 4);
+    wxString exStr = gridNotes->GetCellValue(row, 5);
+
+    bool hasAny = !ccStr.IsEmpty() || !tpStr.IsEmpty() || !exStr.IsEmpty();
+    if (!hasAny)
+        return;
+
+    NoteRecord n;
+    n.matricule = matricule;
+    n.nom = nom;
+    n.prenom = prenom;
+    n.cours = cours;
+    n.hasCC = ccStr.ToDouble(&n.cc);
+    n.hasTP = tpStr.ToDouble(&n.tp);
+    n.hasExamen = exStr.ToDouble(&n.examen);
+    n.moyenne = 0.0;
+    n.statut = statut;
+    n.adminComment = wxT("");
+    n.updatedAt = Database::NowStr();
+    if (statut == wxT("Soumise"))
+        n.submittedAt = Database::NowStr();
+
+    if (n.hasCC && n.hasTP && n.hasExamen)
     {
-        if (wxMessageBox(wxT("Vous avez des notes non sauvegardées!\n\nVoulez-vous vraiment quitter sans sauvegarder?"), 
-                         wxT("Confirmation"), 
-                         wxYES_NO | wxICON_WARNING) != wxYES)
-        {
-            return;
-        }
+        n.moyenne = (n.cc * 0.30) + (n.tp * 0.20) + (n.examen * 0.50);
     }
-    
-    EndModal(wxID_CANCEL);
+
+    Database::UpsertNote(n);
 }

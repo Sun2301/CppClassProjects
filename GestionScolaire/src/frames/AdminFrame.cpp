@@ -1,9 +1,11 @@
 #include "frames/AdminFrame.h"
 #include <wx/statline.h>
 #include <wx/msgdlg.h>
+#include "dialogs/ValidationNotesDialog.h"
+#include "database/Database.h"
+#include "frames/LoginFrame.h"
 
 wxBEGIN_EVENT_TABLE(AdminFrame, wxFrame)
-    EVT_BUTTON(wxID_ANY, AdminFrame::OnGestionEtudiants)
 wxEND_EVENT_TABLE()
 
 AdminFrame::AdminFrame(const wxString& nomAdmin)
@@ -109,6 +111,7 @@ AdminFrame::AdminFrame(const wxString& nomAdmin)
 
     panel->SetSizer(mainSizer);
     Centre();
+
 }
 
 void AdminFrame::OnGestionEtudiants(wxCommandEvent& event)
@@ -137,8 +140,25 @@ void AdminFrame::OnValiderInscriptions(wxCommandEvent& event)
 
 void AdminFrame::OnValiderNotes(wxCommandEvent& event)
 {
-    wxMessageBox(wxT("Module Validation des Notes\n(À implémenter)"), 
-                 wxT("Info"), wxOK | wxICON_INFORMATION);
+    auto notes = Database::GetAllNotes();
+    bool hasSubmitted = false;
+    for (const auto& n : notes)
+    {
+        if (n.statut == wxT("Soumise"))
+        {
+            hasSubmitted = true;
+            break;
+        }
+    }
+    if (!hasSubmitted)
+    {
+        wxMessageBox(wxT("Aucune note soumise pour validation."), 
+                     wxT("Info"), wxOK | wxICON_INFORMATION);
+        return;
+    }
+
+    ValidationNotesDialog dialog(this);
+    dialog.ShowModal();
 }
 
 void AdminFrame::OnCreerEmploiTemps(wxCommandEvent& event)
@@ -159,7 +179,8 @@ void AdminFrame::OnDeconnexion(wxCommandEvent& event)
                      wxT("Confirmation"), 
                      wxYES_NO | wxICON_QUESTION) == wxYES)
     {
-        Close(true);
-        // TODO: Retourner à l'écran de connexion
+        LoginFrame* login = new LoginFrame();
+        login->Show(true);
+        Destroy();
     }
 }
